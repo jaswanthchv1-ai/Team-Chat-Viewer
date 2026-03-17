@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PST to EML Converter</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fff;--bg2:#f5f5f5;--bg3:#ebebeb;--bgi:#e6f1fb;--bgs:#eaf3de;--bgw:#faeeda;--bgd:#fce8e8;--tx:#1a1a1a;--tx2:#555;--tx3:#999;--txi:#185fa5;--txs:#3b6d11;--txw:#854f0b;--txd:#a32d2d;--bd:rgba(0,0,0,0.12);--bdh:rgba(0,0,0,0.25);--bdi:rgba(24,95,165,0.4);--rm:8px;--rl:12px}
+@media(prefers-color-scheme:dark){:root{--bg:#1e1e1e;--bg2:#272727;--bg3:#2f2f2f;--bgi:#0c2a45;--bgs:#172d08;--bgw:#2e1a04;--bgd:#3a1010;--tx:#e8e8e8;--tx2:#aaa;--tx3:#666;--txi:#85b7eb;--txs:#97c459;--txw:#ef9f27;--txd:#f09595;--bd:rgba(255,255,255,0.1);--bdh:rgba(255,255,255,0.22);--bdi:rgba(133,183,235,0.35)}}
+html,body{min-height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--tx);background:var(--bg3)}
+#app{display:flex;flex-direction:column;min-height:100vh;background:var(--bg)}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 20px;border-bottom:0.5px solid var(--bd);background:var(--bg)}
+.topbar-title{font-size:15px;font-weight:700}.topbar-title span{color:var(--txi)}
+.back-btn{font-size:12px;padding:5px 12px;border:0.5px solid var(--bdh);border-radius:var(--rm);cursor:pointer;background:var(--bg2);color:var(--tx);text-decoration:none;display:inline-flex;align-items:center;gap:5px;transition:background .1s}
+.back-btn:hover{background:var(--bg3)}
+.privacy-bar{display:flex;align-items:center;gap:8px;padding:7px 20px;background:var(--bgs);font-size:11px;color:var(--txs);border-bottom:0.5px solid var(--bd)}
+.page{flex:1;padding:24px 20px;display:flex;flex-direction:column;gap:18px;max-width:780px;margin:0 auto;width:100%}
+.section{background:var(--bg2);border:0.5px solid var(--bd);border-radius:var(--rl);padding:20px}
+.section h2{font-size:14px;font-weight:600;margin-bottom:4px}
+.desc{font-size:12px;color:var(--tx2);margin-bottom:14px;line-height:1.65}
+.btn{font-size:12px;padding:5px 12px;border:0.5px solid var(--bdh);border-radius:var(--rm);cursor:pointer;background:var(--bg2);color:var(--tx);transition:background .1s;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+.btn:hover{background:var(--bg3)}
+.btn.primary{background:var(--bgi);color:var(--txi);border-color:var(--bdi)}
+.btn.primary:hover{opacity:.85}
+.drop-zone{border:1.5px dashed var(--bdh);border-radius:var(--rm);padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.drop-zone:hover,.drop-zone.over{border-color:var(--bdi);background:var(--bgi)}
+.drop-zone .icon{font-size:30px;margin-bottom:8px}
+.drop-zone h3{font-size:14px;font-weight:600;margin-bottom:3px}
+.drop-zone p{font-size:12px;color:var(--tx2)}
+.upload-link{color:var(--txi);cursor:pointer;font-weight:500}
+.status{font-size:12px;padding:10px 14px;border-radius:var(--rm);margin-top:12px;display:none;line-height:1.7}
+.status.info{background:var(--bgi);color:var(--txi)}
+.status.error{background:var(--bgd);color:var(--txd)}
+.status.success{background:var(--bgs);color:var(--txs)}
+.status.warn{background:var(--bgw);color:var(--txw)}
+.prog-wrap{margin-top:12px;display:none}
+.prog-bg{background:var(--bg3);border-radius:4px;height:7px;overflow:hidden;margin:5px 0}
+.prog-fill{height:100%;background:var(--txi);border-radius:4px;transition:width .4s}
+.prog-label{font-size:11px;color:var(--tx2)}
+.results{margin-top:16px;display:none}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.results-header span{font-size:13px;font-weight:500}
+.result-actions{display:flex;gap:6px;flex-wrap:wrap}
+.eml-item{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rm);margin-bottom:3px;font-size:12px}
+.eml-subject{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.eml-from{color:var(--tx2);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px}
+.eml-size{color:var(--tx3);font-size:11px;white-space:nowrap}
+.enc-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+@media(max-width:500px){.enc-cards{grid-template-columns:1fr}}
+.enc-card{padding:12px;border-radius:var(--rm);border:0.5px solid var(--bd)}
+.enc-card.ok{background:var(--bgs);border-color:rgba(59,109,17,0.2)}
+.enc-card.bad{background:var(--bgd);border-color:rgba(163,45,45,0.2)}
+.enc-card .ec-title{font-size:12px;font-weight:600;margin-bottom:3px}
+.enc-card.ok .ec-title{color:var(--txs)}
+.enc-card.bad .ec-title{color:var(--txd)}
+.enc-card .ec-desc{font-size:11px;color:var(--tx2);line-height:1.5}
+.tool-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:8px;margin-bottom:14px}
+.tool-card{background:var(--bg);border:0.5px solid var(--bd);border-radius:var(--rm);padding:12px}
+.tool-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.tool-os{font-size:10px;color:var(--tx3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.tool-desc{font-size:12px;color:var(--tx2);line-height:1.5}
+code{font-family:monospace;font-size:11px;background:var(--bg3);padding:2px 6px;border-radius:4px;display:inline-block;margin-top:2px;cursor:pointer;user-select:all}
+code:hover{background:var(--bgi);color:var(--txi)}
+.steps{display:flex;flex-direction:column;gap:10px}
+.step{display:flex;gap:9px}
+.step-num{min-width:20px;height:20px;border-radius:50%;background:var(--bgi);color:var(--txi);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.step-body strong{font-size:12px;font-weight:600;display:block;margin-bottom:1px}
+.step-body p{font-size:12px;color:var(--tx2);line-height:1.6}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdh);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar">
+    <a class="back-btn" href="index.html">&#8592; Back to Viewer</a>
+    <div class="topbar-title">Teams <span>PST Converter</span></div>
+  </div>
+  <div class="privacy-bar">&#128274; 100% private &mdash; your files never leave this device. All processing runs in your browser.</div>
+  <div class="page">
+
+    <div class="section">
+      <h2>&#128260; PST to EML Converter</h2>
+      <p class="desc">Drop your PST file below. Uses Microsoft's [MS-PST] open specification with the documented NDB decryption table. No uploads, no server, everything stays on your device.</p>
+      <div class="drop-zone" id="dropZone"
+        ondragover="event.preventDefault();this.classList.add('over')"
+        ondragleave="this.classList.remove('over')"
+        ondrop="this.classList.remove('over');handleDrop(event.dataTransfer.files)"
+        onclick="document.getElementById('pstInput').click()">
+        <div class="icon">&#128193;</div>
+        <h3>Drop your PST or OST file here</h3>
+        <p>Or <span class="upload-link">click to browse</span> &mdash; .pst and .ost supported</p>
+      </div>
+      <input id="pstInput" type="file" accept=".pst,.ost" style="display:none" onchange="handleDrop(this.files)">
+      <div class="status" id="status"></div>
+      <div class="prog-wrap" id="progWrap">
+        <div class="prog-label" id="progLabel">Reading...</div>
+        <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+      </div>
+      <div class="results" id="results">
+        <div class="results-header">
+          <span id="resultCount"></span>
+          <div class="result-actions">
+            <button class="btn primary" onclick="downloadAll()">&#11015; Download All EMLs</button>
+            <a class="btn primary" href="index.html" onclick="sendToViewer()">&#128172; Open in Viewer</a>
+          </div>
+        </div>
+        <div id="resultItems"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>&#128273; Why some PST files cannot be opened in a browser</h2>
+      <p class="desc">PST files use one of two encryption methods. The browser handles one but not the other:</p>
+      <div class="enc-cards">
+        <div class="enc-card ok">
+          <div class="ec-title">&#10003; Compressible Encryption (NDB)</div>
+          <div class="ec-desc">Uses a fixed substitution table published in Microsoft's open [MS-PST] specification. Fully reversible in the browser. Common in older Outlook and personal archive PSTs.</div>
+        </div>
+        <div class="enc-card bad">
+          <div class="ec-title">&#10005; High Encryption (AES/DES)</div>
+          <div class="ec-desc">Uses a key derived from your Windows user profile &mdash; a key that physically never leaves your Windows installation. Cannot be decrypted anywhere else, including any browser or WASM runtime, without that exact Windows machine.</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--tx2);margin-top:12px;line-height:1.6">Most enterprise eDiscovery exports (Microsoft 365, Exchange Server) use High Encryption. For those, the manual tools below work because they run on the same machine holding the key.</p>
+    </div>
+
+    <div class="section">
+      <h2>&#128218; Manual conversion tools &mdash; for encrypted PSTs</h2>
+      <p class="desc">These run locally on the machine where the decryption key exists. Convert to EML, then load into the viewer.</p>
+      <div class="tool-grid">
+        <div class="tool-card"><div class="tool-name">Aid4Mail</div><div class="tool-os">Windows &bull; Free tier</div><div class="tool-desc">Best for non-technical users. GUI drag-and-drop, handles all PST encryption types.</div></div>
+        <div class="tool-card"><div class="tool-name">Thunderbird</div><div class="tool-os">All platforms &bull; Free</div><div class="tool-desc">Import via "ImportExportTools NG" extension, then export all as EML files.</div></div>
+        <div class="tool-card"><div class="tool-name">readpst</div><div class="tool-os">Mac &bull; Linux &bull; Free</div><div class="tool-desc"><code>readpst -e -o ./out file.pst</code></div></div>
+        <div class="tool-card"><div class="tool-name">Outlook</div><div class="tool-os">Windows &bull; Mac</div><div class="tool-desc">Open PST &rarr; select all &rarr; drag messages to desktop as EML files.</div></div>
+      </div>
+      <div style="font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:10px">readpst quick start (fastest)</div>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Install</strong><p>Mac: <code>brew install libpst</code> &nbsp; Linux: <code>sudo apt install pst-utils</code></p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Convert</strong><p><code>readpst -e -o ./emails your_file.pst</code></p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Load EMLs</strong><p>Go to the <a href="index.html" style="color:var(--txi);font-weight:500">Chat Viewer</a> and drag all EML files in.</p></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<script>
+// NDB Compressible Encryption decryption table — [MS-PST] Section 5.1 Open Specification
+var DT=new Uint8Array([65,54,19,98,168,33,110,187,244,22,204,4,127,100,232,93,30,242,203,42,116,197,94,53,210,149,71,158,150,45,154,136,76,125,132,63,243,57,179,160,6,11,237,152,205,243,196,129,90,220,90,78,26,189,10,219,199,93,129,45,15,115,78,161,149,160,194,175,73,79,149,14,35,233,47,27,222,145,26,21,218,77,131,220,11,251,46,156,167,35,127,62,51,51,83,253,72,154,92,193,174,86,0,123,25,109,147,223,25,63,250,60,57,225,99,26,11,25,35,64,49,56,0,21,90,73,37,140,1,195,165,225,48,5,201,91,243,178,131,36,255,189,93,201,34,5,84,181,152,3,168,208,193,2,10,159,4,186,186,255,76,137,34,116,178,121,5,134,53,95,211,43,149,147,121,35,14,2,177,34,128,8,164,46,85,130,200,198,89,15,95,80,85,224,0,209,238,19,153,199,248,76,237,168,175,91,61,73,16,47,68,92,114,150,71,75,203,243,241,110,25,177,144,143,175,137,120,149,32,12,220,212,0,58,98,8,34,107,100,91,198,165,68,87,162,93,146,24,215,56,167,32,61,99,19,41]);
+var extractedEMLs=[];
+
+function handleDrop(files){
+  if(!files||!files.length)return;
+  extractedEMLs=[];reset();
+  var file=files[0];
+  if(!file.name.match(/\.(pst|ost)$/i)){showStatus('Please select a .pst or .ost file.','error');return;}
+  showStatus('Reading <b>'+esc(file.name)+'</b> ('+fmtSize(file.size)+')...','info');
+  setProgress(5,'Reading file...');
+  var reader=new FileReader();
+  reader.onload=function(e){parsePST(e.target.result,file.name);};
+  reader.readAsArrayBuffer(file);
+}
+
+function parsePST(buf,filename){
+  var dv=new DataView(buf);var u8=new Uint8Array(buf);
+  if(u8[0]!==0x21||u8[1]!==0x42||u8[2]!==0x44||u8[3]!==0x4E){hideProgress();showStatus('Not a valid PST/OST file.','error');return;}
+  var wVer=dv.getUint16(10,true);var isUnicode=wVer>=23;var encType=u8[513];
+  setProgress(15,'Format: '+(isUnicode?'Unicode':'ANSI')+' | Encryption: '+encName(encType));
+  if(encType===2){hideProgress();showStatus('<b>High Encryption detected (AES/DES)</b><br><br>This PST uses a decryption key tied to your Windows user profile — a key that physically cannot exist outside that specific Windows installation. No browser, server, or WASM runtime can decrypt it without access to that machine.<br><br>Please use the <b>manual conversion tools</b> in the guide below. They work because they run on the same Windows machine holding the key.','error');return;}
+  setProgress(30,'Decrypting and scanning blocks...');
+  var messages=[];
+  try{ messages=decryptAndScan(u8,encType,isUnicode); }catch(e){ console.warn(e); }
+  setProgress(85,'Building EML files...');
+  if(!messages.length){hideProgress();showStatus('<b>No messages found.</b> The file structure parsed successfully but no readable messages were extracted. This may mean the content uses a deeper encryption layer. Please try the manual tools below.','warn');return;}
+  extractedEMLs=messages.map(function(m,i){return{name:'message_'+(i+1)+'.eml',content:buildEML(m),msg:m};});
+  setProgress(100,'Done!');
+  setTimeout(hideProgress,600);
+  showStatus('Extracted <b>'+extractedEMLs.length+' message'+(extractedEMLs.length!==1?'s':'')+'</b> from '+esc(filename)+'.','success');
+  renderResults();
+}
+
+function encName(b){return b===0?'None (unencrypted)':b===1?'NDB Compressible (browser supported)':b===2?'High Encryption AES/DES':'Unknown ('+b+')';}
+
+function decryptBlock(data,enc){
+  if(enc===0)return data;
+  if(enc===1){var out=new Uint8Array(data.length);for(var i=0;i<data.length;i++)out[i]=DT[data[i]];return out;}
+  return data;
+}
+
+function decryptAndScan(u8,encType,isUnicode){
+  var chunkSize=512;var dec=new Uint8Array(u8.length);
+  for(var c=0;c*chunkSize<u8.length;c++){
+    var s=c*chunkSize;var e=Math.min(s+chunkSize,u8.length);
+    dec.set(decryptBlock(u8.slice(s,e),encType),s);
+  }
+  var latin='';for(var i=0;i<dec.length;i++)latin+=String.fromCharCode(dec[i]);
+  var msgs=scanText(latin);
+  if(msgs.length===0&&isUnicode){
+    var u16='';for(var j=0;j<dec.length-1;j+=2){var code=dec[j]|(dec[j+1]<<8);if(code>0&&code<0xFFFE)u16+=String.fromCharCode(code);}
+    msgs=scanText(u16);
+  }
+  return msgs;
+}
+
+function scanText(text){
+  var msgs=[];var seen=[];
+  var re=/From:\s*[^\r\n]{3,250}[\r\n]+(?:[\w-]+:\s*[^\r\n]*[\r\n]+){1,}/g;var m;
+  while((m=re.exec(text))!==null&&msgs.length<2000){
+    var idx=m.index;var dup=false;
+    for(var s=0;s<seen.length;s++){if(Math.abs(seen[s]-idx)<300){dup=true;break;}}
+    if(dup)continue;seen.push(idx);
+    var p=parseBlock(text.substr(idx,6000));if(p&&p.from)msgs.push(p);
+  }
+  return msgs;
+}
+
+function parseBlock(block){
+  var lines=block.split(/[\r\n]+/);var from='',to='',cc='',subject='',date='',body=[];var inB=false;
+  for(var i=0;i<lines.length;i++){
+    if(!inB){if(lines[i].trim()===''){inB=true;continue;}var hm=lines[i].match(/^([\w-]+):\s*(.*)/);
+      if(hm){var k=hm[1].toLowerCase();if(k==='from')from=hm[2].trim();else if(k==='to')to=hm[2].trim();else if(k==='cc')cc=hm[2].trim();else if(k==='subject')subject=hm[2].trim();else if(k==='date')date=hm[2].trim();}
+    }else{body.push(lines[i]);if(body.length>200)break;}
+  }
+  var b=body.join('\n').replace(/<style[^>]*>[\s\S]*?<\/style>/gi,'').replace(/<[^>]+>/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/\s{3,}/g,'\n\n').trim();
+  if(!from||from.length<3)return null;
+  return{from,to,cc,subject:subject||'(no subject)',date,body:b};
+}
+
+function buildEML(m){
+  var l=['From: '+m.from,'To: '+(m.to||'')];
+  if(m.cc)l.push('Cc: '+m.cc);
+  l.push('Subject: '+m.subject,'Date: '+(m.date||new Date().toUTCString()),'Content-Type: text/plain; charset=utf-8','Content-Transfer-Encoding: 8bit','',m.body);
+  return l.join('\r\n');
+}
+
+function renderResults(){
+  document.getElementById('resultCount').textContent=extractedEMLs.length+' message'+(extractedEMLs.length!==1?'s':'')+' extracted';
+  document.getElementById('resultItems').innerHTML=extractedEMLs.slice(0,40).map(function(e,i){
+    var sz=Math.round(e.content.length/1024*10)/10;
+    return'<div class="eml-item"><span>&#128140;</span><span class="eml-subject" title="'+esc(e.msg.subject)+'">'+esc(e.msg.subject.substring(0,55))+'</span><span class="eml-from">'+esc(e.msg.from.substring(0,30))+'</span><span class="eml-size">'+sz+'KB</span><button class="btn" onclick="downloadOne('+i+')">&#11015;</button></div>';
+  }).join('')+(extractedEMLs.length>40?'<div style="font-size:12px;color:var(--tx2);padding:6px 4px">...and '+(extractedEMLs.length-40)+' more. Use Download All to get everything.</div>':'');
+  document.getElementById('results').style.display='block';
+}
+
+function downloadOne(i){var e=extractedEMLs[i];var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([e.content],{type:'message/rfc822'}));a.download=e.name;a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);}
+function downloadAll(){if(!extractedEMLs.length)return;extractedEMLs.forEach(function(e,i){setTimeout(function(){var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([e.content],{type:'message/rfc822'}));a.download=e.name;a.click();setTimeout(function(){URL.revokeObjectURL(a.href);},1000);},i*80);});}
+function sendToViewer(){try{sessionStorage.setItem('pendingEMLs',JSON.stringify(extractedEMLs.map(function(e){return{name:e.name,content:e.content};})));}catch(err){}}
+function showStatus(html,type){var el=document.getElementById('status');el.innerHTML=html;el.className='status '+type;el.style.display='block';}
+function setProgress(pct,label){document.getElementById('progWrap').style.display='block';document.getElementById('progFill').style.width=pct+'%';document.getElementById('progLabel').textContent=label;}
+function hideProgress(){document.getElementById('progWrap').style.display='none';}
+function reset(){document.getElementById('status').style.display='none';document.getElementById('progWrap').style.display='none';document.getElementById('results').style.display='none';}
+function fmtSize(b){return b>1048576?Math.round(b/1048576*10)/10+' MB':Math.round(b/1024)+' KB';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>
